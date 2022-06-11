@@ -45,8 +45,10 @@ def sql_retrieve(date):
     cursor.execute(statement, query_term)
 
     for data in cursor:
+        temp_list = []
         for item in data:
-            return_data.append(item)
+            temp_list.append(item)
+        return_data.append(temp_list)
 
     conn.close()
     return return_data
