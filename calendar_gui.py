@@ -1,10 +1,11 @@
 import sys
 from PySide2.QtWidgets import *
 from PySide2.QtCore import Qt
+from PySide2.QtGui import QIcon
+from PySide2.QtGui import QPalette, QColor
 
 import sql
 import test
-from test import check_data
 from sql import sql_insert
 
 
@@ -19,7 +20,10 @@ class MainWindow(QMainWindow):
 
         self.date = self.calendar.selectedDate()
         self.selected_date_string = test.date_string(self.date)
-        self.data = check_data()
+
+        # get strava json data
+        self.data = test.check_data()
+
         self.sport_choice = ""
         self.duration_choice = 0
         self.intensity_choice = ""
@@ -29,10 +33,13 @@ class MainWindow(QMainWindow):
         self.sport_dropdown = QComboBox()
         self.duration_dropdown = QComboBox()
         self.intensity_dropdown = QComboBox()
+        self.refresh_button = QToolButton()
 
-        # submission button settings
+        # button settings
         self.submit_button = QPushButton("Submit")
         self.submit_button.setMinimumSize(50, 50)
+        self.refresh_button.setIcon(QIcon("images/refresh.png"))
+        self.refresh_button.clicked.connect(self.data_refresh)
 
         # scroll area for workouts
         self.scroll_area = QScrollArea()
@@ -45,7 +52,7 @@ class MainWindow(QMainWindow):
         self.duration_dropdown.currentIndexChanged.connect(self.duration_changed)
         self.submit_button.clicked.connect(self.button_clicked)
 
-        self.sports = ["Bike", "Run", "Swim", "S and C"]
+        self.sports = ["Ride", "Run", "Swim", "S and C"]
         self.sport_dropdown.addItems(self.sports)
         self.sport_dropdown.setMinimumSize(50, 50)
 
@@ -53,7 +60,7 @@ class MainWindow(QMainWindow):
         self.intensity_dropdown.addItems(self.intensity)
         self.intensity_dropdown.setMinimumSize(50, 50)
 
-        self.duration = ["30", "45", "60", "75", "90", "105", "120", "135", "150"]
+        self.duration = ["30", "45", "60", "75", "90", "105", "120", "135", "150", "160", "180"]
         self.duration_dropdown.addItems(self.duration)
         self.duration_dropdown.setMinimumSize(50, 50)
 
@@ -66,14 +73,19 @@ class MainWindow(QMainWindow):
         dropdowns = QVBoxLayout()
 
         self.right_upper.addWidget(self.date_label, alignment=Qt.AlignCenter)
+        self.right_upper.addWidget(self.refresh_button)
+
         self.right_lower.addLayout(self.right_lower_left)
         self.right_lower.addLayout(self.right_lower_right)
+
         self.right_lower_left.addWidget(self.scroll_area)
         self.right_lower_right.addLayout(dropdowns)
+
         dropdowns.addWidget(self.sport_dropdown)
         dropdowns.addWidget(self.duration_dropdown)
         dropdowns.addWidget(self.intensity_dropdown)
         dropdowns.addWidget(self.submit_button)
+
         right_box.addLayout(self.right_upper)
         right_box.addLayout(self.right_lower)
         layout.addWidget(self.calendar)
@@ -93,8 +105,20 @@ class MainWindow(QMainWindow):
             vbox = QVBoxLayout()
             temp = QWidget()
             temp.setLayout(vbox)
+
             for item in daily_data:
-                vbox.addWidget(QTextEdit(item[2]))
+                date_data = test.check_date(self.data, self.selected_date_string)[0]
+                workout = QTextEdit(item[2])
+
+                if item[1] == date_data[1]:
+                    workout.setAutoFillBackground(True)
+                    palette = self.palette()
+                    palette.setColor(QPalette.Window, QColor("Green"))
+                    palette.setColor(QPalette.Background, QColor("Green"))
+
+                    workout.setPalette(palette)
+
+                vbox.addWidget(workout)
 
             self.scroll_area.setWidget(temp)
 
@@ -122,6 +146,11 @@ class MainWindow(QMainWindow):
                    self.duration_choice,
                    self.intensity_choice)
 
+    def data_refresh(self):
+        print("Refreshing strava data...")
+        test.get_data()
+        print("Done")
+
 
 app = QApplication(sys.argv)
 
@@ -129,3 +158,14 @@ window = MainWindow()
 window.show()
 
 app.exec_()
+
+
+# def main():
+#     app = QApplication(sys.argv)
+#     window = MainWindow()
+#     window.show()
+#     app.exec()
+#
+#
+# if __name__ == '__main__':
+#     main()
