@@ -4,22 +4,23 @@ import requests
 from config import credentials as secrets
 
 
-def check_data():
+def retrieve_strava_data():
     file = open("strava.json")
     data = json.load(file)
-
     file.close()
     return data
 
 
-def check_date(data, inbound_date):
+def return_matching_strava_data(data, inbound_date):
     for i in data:
         date_item = i["start_date"]
         date = date_item.split("T")[0]
 
         if date == inbound_date:
             return_data = [(i["name"], i["type"], math.trunc(i["moving_time"]/60))]
+            print("Returning data: ", return_data)
             return return_data
+    return []
 
 
 def write_json(date, workout_data, filename='training.json'):

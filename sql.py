@@ -3,6 +3,7 @@ import mariadb
 
 
 def sql_insert(date, activity_type, name, duration, intensity):
+    print("inserting ", activity_type, " to database.")
     db_host = secrets['mysql']['host']
     db_username = secrets['mysql']['username']
     db_password = secrets['mysql']['password']

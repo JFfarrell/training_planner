@@ -19,10 +19,11 @@ class MainWindow(QMainWindow):
         self.calendar.setMinimumSize(500, 500)
 
         self.date = self.calendar.selectedDate()
+        self.initial_date_string = test.date_string(self.date)
         self.selected_date_string = test.date_string(self.date)
 
         # get strava json data
-        self.data = test.check_data()
+        self.data = test.retrieve_strava_data()
 
         self.sport_choice = ""
         self.duration_choice = 0
@@ -46,7 +47,7 @@ class MainWindow(QMainWindow):
         self.scroll_area.setMinimumSize(300, 200)
         self.scroll_area.setWidget(QLabel("Nothing here yet :)"))
 
-        self.calendar.clicked.connect(self.clicked)
+        self.calendar.clicked.connect(self.render_workout_data_widget)
         self.sport_dropdown.currentIndexChanged.connect(self.sport_changed)
         self.intensity_dropdown.currentIndexChanged.connect(self.intensity_changed)
         self.duration_dropdown.currentIndexChanged.connect(self.duration_changed)
@@ -94,36 +95,75 @@ class MainWindow(QMainWindow):
         container = QWidget()
         container.setLayout(layout)
         self.setCentralWidget(container)
+        self.render_workout_data_widget(self.initial_date_string)
 
-    def clicked(self):
-        self.selected_date_string = test.date_string(self.calendar.selectedDate())
-        self.date_label.setText(self.calendar.selectedDate().toString())
-        daily_data = sql.sql_retrieve(self.selected_date_string)
-        print("daily data: ", daily_data)
+    def retrieve_workout_data_for_display_widget(self, selected_date_string):
+        planned_sessions_for_selected_day = sql.sql_retrieve(selected_date_string)
+        print("daily data: ", planned_sessions_for_selected_day)
+        planned_workouts_for_day = []
 
-        if len(daily_data) != 0:
-            vbox = QVBoxLayout()
-            temp = QWidget()
-            temp.setLayout(vbox)
+        if len(planned_sessions_for_selected_day) != 0:
 
-            for item in daily_data:
-                date_data = test.check_date(self.data, self.selected_date_string)[0]
-                workout = QTextEdit(item[2])
+            for planned_session_details in planned_sessions_for_selected_day:
+                strava_data_for_same_date = test.return_matching_strava_data(self.data, selected_date_string)
+                planned_workout = QTextEdit(planned_session_details[2])
+                planned_workout_length = int(planned_session_details[3])
+                planned_workout.setAutoFillBackground(True)
+                palette = self.palette()
 
-                if item[1] == date_data[1]:
-                    workout.setAutoFillBackground(True)
-                    palette = self.palette()
-                    palette.setColor(QPalette.Window, QColor("Green"))
-                    palette.setColor(QPalette.Background, QColor("Green"))
+                if len(strava_data_for_same_date) > 0:
+                    matching_strava_workout_data = strava_data_for_same_date[0]
+                    matching_strava_workout_duration = matching_strava_workout_data[2]
+                    planned_workout_short = matching_strava_workout_duration < planned_workout_length * 0.75
 
-                    workout.setPalette(palette)
+                    print("Planned session", planned_session_details)
+                    print("Actual strava session", matching_strava_workout_data)
 
-                vbox.addWidget(workout)
+                    if planned_session_details[1] == matching_strava_workout_data[1]:
 
-            self.scroll_area.setWidget(temp)
+                        if planned_workout_short:
+                            palette.setColor(QPalette.Window, QColor("Orange"))
+                            palette.setColor(QPalette.Background, QColor("Orange"))
 
+                        else:
+                            palette.setColor(QPalette.Window, QColor("Green"))
+                            palette.setColor(QPalette.Background, QColor("Green"))
+
+                    else:
+                        print("No matching workout data found.")
+                        palette.setColor(QPalette.Window, QColor("Red"))
+                        palette.setColor(QPalette.Background, QColor("Red"))
+
+                else:
+                    print("No matching workout data found.")
+                    palette.setColor(QPalette.Window, QColor("Red"))
+                    palette.setColor(QPalette.Background, QColor("Red"))
+
+                planned_workout.setPalette(palette)
+                planned_workouts_for_day.append(planned_workout)
+
+            return planned_workouts_for_day
+
+    def render_workout_data_widget(self, *args):
+        if type(args[0]) == str:
+            self.selected_date_string = args[0]
         else:
-            self.scroll_area.setWidget(QLabel("Nothing here yet :)"))
+            self.selected_date_string = test.date_string(self.calendar.selectedDate())
+
+        self.date_label.setText(self.calendar.selectedDate().toString())
+
+        workout_display_widget = QWidget()
+        vbox = QVBoxLayout()
+        workout_display_widget.setLayout(vbox)
+
+        returned_planned_workouts = self.retrieve_workout_data_for_display_widget(self.selected_date_string)
+        if returned_planned_workouts is not None:
+            for workout in returned_planned_workouts:
+                vbox.addWidget(workout)
+        else:
+            workout_display_widget = QLabel("Nothing here yet :)")
+
+        self.scroll_area.setWidget(workout_display_widget)
 
     def sport_changed(self, i):
         self.sport_choice = self.sports[i]
@@ -158,14 +198,3 @@ window = MainWindow()
 window.show()
 
 app.exec_()
-
-
-# def main():
-#     app = QApplication(sys.argv)
-#     window = MainWindow()
-#     window.show()
-#     app.exec()
-#
-#
-# if __name__ == '__main__':
-#     main()
