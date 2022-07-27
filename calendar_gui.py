@@ -19,11 +19,11 @@ class MainWindow(QMainWindow):
         self.calendar.setMinimumSize(500, 500)
 
         self.date = self.calendar.selectedDate()
-        self.initial_date_string = test.extract_date_string_from(self.date)
-        self.selected_date_string = test.extract_date_string_from(self.date)
+        self.initial_date_string = data_management_functions.extract_date_string_from(self.date)
+        self.selected_date_string = data_management_functions.extract_date_string_from(self.date)
 
         # get strava json data
-        self.data = test.load_strava_data()
+        self.data = data_management_functions.load_strava_data()
 
         self.sport_choice = ""
         self.duration_choice = 0
@@ -105,7 +105,7 @@ class MainWindow(QMainWindow):
         if len(planned_sessions_for_selected_day) != 0:
 
             for planned_session_details in planned_sessions_for_selected_day:
-                strava_data_for_same_date = test.return_matching_strava_data(self.data, selected_date_string)
+                strava_data_for_same_date = data_management_functions.return_matching_strava_data(self.data, selected_date_string)
                 planned_workout = QTextEdit(planned_session_details[2])
                 planned_workout_length = int(planned_session_details[3])
                 planned_workout.setAutoFillBackground(True)
@@ -148,7 +148,7 @@ class MainWindow(QMainWindow):
         if type(args[0]) == str:
             self.selected_date_string = args[0]
         else:
-            self.selected_date_string = test.extract_date_string_from(self.calendar.selectedDate())
+            self.selected_date_string = data_management_functions.extract_date_string_from(self.calendar.selectedDate())
 
         self.date_label.setText(self.calendar.selectedDate().toString())
 
@@ -188,7 +188,7 @@ class MainWindow(QMainWindow):
 
     def data_refresh(self):
         print("Refreshing strava data...")
-        test.fetch_strava_data()
+        data_management_functions.fetch_strava_data()
         print("Done")
 
 
