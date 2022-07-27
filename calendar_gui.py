@@ -5,7 +5,7 @@ from PySide2.QtGui import QIcon
 from PySide2.QtGui import QPalette, QColor
 
 import sql
-import test
+import data_management_functions
 from sql import sql_insert
 
 
@@ -19,11 +19,11 @@ class MainWindow(QMainWindow):
         self.calendar.setMinimumSize(500, 500)
 
         self.date = self.calendar.selectedDate()
-        self.initial_date_string = test.date_string(self.date)
-        self.selected_date_string = test.date_string(self.date)
+        self.initial_date_string = test.extract_date_string_from(self.date)
+        self.selected_date_string = test.extract_date_string_from(self.date)
 
         # get strava json data
-        self.data = test.retrieve_strava_data()
+        self.data = test.load_strava_data()
 
         self.sport_choice = ""
         self.duration_choice = 0
@@ -148,7 +148,7 @@ class MainWindow(QMainWindow):
         if type(args[0]) == str:
             self.selected_date_string = args[0]
         else:
-            self.selected_date_string = test.date_string(self.calendar.selectedDate())
+            self.selected_date_string = test.extract_date_string_from(self.calendar.selectedDate())
 
         self.date_label.setText(self.calendar.selectedDate().toString())
 
@@ -188,7 +188,7 @@ class MainWindow(QMainWindow):
 
     def data_refresh(self):
         print("Refreshing strava data...")
-        test.get_data()
+        test.fetch_strava_data()
         print("Done")
 
 

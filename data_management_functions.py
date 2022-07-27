@@ -4,7 +4,7 @@ import requests
 from config import credentials as secrets
 
 
-def retrieve_strava_data():
+def load_strava_data():
     file = open("strava.json")
     data = json.load(file)
     file.close()
@@ -23,23 +23,7 @@ def return_matching_strava_data(data, inbound_date):
     return []
 
 
-def write_json(date, workout_data, filename='training.json'):
-    with open(filename, 'r+') as file:
-        # First we load existing data into a dict.
-        file_data = json.load(file)
-        print("file data: ", file_data)
-        file_data[date] = workout_data
-        print("file data: ", file_data)
-
-        # Join new_data with file_data inside emp_details
-        # file_data[date].append(workout_data)
-        # Sets file's current position at offset.
-        file.seek(0)
-        # convert back to json.
-        json.dump(file_data, file, indent=4)
-
-
-def date_string(selected_date):
+def extract_date_string_from(selected_date):
     selected_date_values = str(selected_date).strip(") ").split("(")[1].split(", ")
 
     new_values = []
@@ -53,7 +37,7 @@ def date_string(selected_date):
     return f"{selected_date_values[0]}-{selected_date_values[1]}-{selected_date_values[2]}"
 
 
-def get_data():
+def fetch_strava_data():
     auth_url = "https://www.strava.com/oauth/token"
     activities_url = "https://www.strava.com/api/v3/athlete/activities?access_token="
 
