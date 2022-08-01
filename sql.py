@@ -4,32 +4,41 @@ import mariadb
 
 def sql_insert(date, activity_type, name, duration, intensity):
     print("inserting ", activity_type, " to database.")
-    db_host = secrets['mysql']['host']
-    db_username = secrets['mysql']['username']
-    db_password = secrets['mysql']['password']
-    db_name = secrets['mysql']['database']
+    print(name)
+    if (len(activity_type) > 0
+            and len(name) > 0
+            and len(duration) > 0
+            and len(intensity) > 0):
 
-    conn = mariadb.connect(host=db_host,
-                           user=db_username,
-                           passwd=db_password,
-                           database="training")
+        db_host = secrets['mysql']['host']
+        db_username = secrets['mysql']['username']
+        db_password = secrets['mysql']['password']
+        db_name = secrets['mysql']['database']
 
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO test values('{date}', "
-        "'{activity_type}', "
-        "'{name}', "
-        "'{duration}', "
-        "'{intensity}');".format(date=date,
-                                 activity_type=activity_type,
-                                 name=name,
-                                 duration=duration,
-                                 intensity=intensity
-                                 )
-    )
+        conn = mariadb.connect(host=db_host,
+                               user=db_username,
+                               passwd=db_password,
+                               database="training")
 
-    conn.commit()
-    conn.close()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO test values('{date}', "
+            "'{activity_type}', "
+            "'{name}', "
+            "'{duration}', "
+            "'{intensity}');".format(date=date,
+                                     activity_type=activity_type,
+                                     name=name,
+                                     duration=duration,
+                                     intensity=intensity
+                                     )
+        )
+
+        conn.commit()
+        conn.close()
+    else:
+        print("insertion failed")
+        print(activity_type, name, date, duration, intensity)
 
 
 def sql_retrieve(date):

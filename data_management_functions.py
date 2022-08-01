@@ -33,7 +33,6 @@ def extract_date_string_from(selected_date):
         new_values.append(value)
 
     selected_date_values = new_values
-    print(selected_date_values)
     return f"{selected_date_values[0]}-{selected_date_values[1]}-{selected_date_values[2]}"
 
 
