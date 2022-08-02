@@ -1,31 +1,32 @@
 from PySide2.QtCore import Qt, QDate
 from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import *
-from PySide2.QtGui import QPalette, QColor
 
-import data_management_functions
+from data_management_functions import *
 import sql
-import sys
+from workout_box import WorkoutBox
 
 
 class RightSide(QWidget):
     def __init__(self, current_selected_date):
         super().__init__()
 
+        self.sql_manipulator = sql.SqlManipulator()
+
         self.current_selected_date = current_selected_date
-        self.strava_json_data = data_management_functions.load_strava_data()
+        self.strava_json_data = load_strava_data()
 
         dropdowns_layout = QVBoxLayout()
         self.date_label = QLabel(self.current_selected_date.toString())
-        self.selected_date_string = data_management_functions.extract_date_string_from(current_selected_date)
+        self.selected_date_string = extract_date_string_from(current_selected_date)
 
         # button settings
         self.refresh_button = QToolButton()
-        self.submit_button = QPushButton("Submit")
-        self.submit_button.setMinimumSize(50, 50)
         self.refresh_button.setIcon(QIcon("images/refresh.png"))
         self.refresh_button.clicked.connect(self.data_refresh)
-        self.submit_button.clicked.connect(self.button_clicked)
+        self.submit_button = QPushButton("Submit")
+        self.submit_button.setMinimumSize(50, 50)
+        self.submit_button.clicked.connect(self.submit_button_clicked)
 
         # sport dropdown
         self.sport_dropdown = QComboBox()
@@ -45,7 +46,7 @@ class RightSide(QWidget):
 
         # duration dropdown
         self.duration_dropdown = QComboBox()
-        self.duration_choice = "30"
+        self.duration_choice = 30
         self.duration = ["30", "45", "60", "75", "90", "105", "120", "135", "150", "160", "180"]
         self.duration_dropdown.addItems(self.duration)
         self.duration_dropdown.setMinimumSize(50, 50)
@@ -58,7 +59,7 @@ class RightSide(QWidget):
 
         # scroll area for workouts
         self.scroll_area = QScrollArea()
-        self.scroll_area.setMinimumSize(300, 100)
+        self.scroll_area.setMinimumSize(50, 10)
         self.scroll_area.setWidget(QLabel("Nothing here yet :)"))
 
         self.header_layout.addWidget(self.date_label, alignment=Qt.AlignCenter)
@@ -79,28 +80,45 @@ class RightSide(QWidget):
 
     def intensity_changed(self, i):
         self.zone_choice = self.zone[i]
-        print(self.zone_choice)
         return self.zone_choice
 
     def sport_changed(self, i):
         self.sport_choice = self.sports[i]
-        print(self.sport_choice)
         return self.sport_choice
 
     def duration_changed(self, i):
         self.duration_choice = int(self.duration[i])
-        print(self.duration_choice)
         return self.duration_choice
 
-    def button_clicked(self):
+    def submit_button_clicked(self):
         event_name = f"{self.duration_choice} {self.sport_choice}"
-        print(event_name)
 
-        sql.sql_insert(self.selected_date_string,
-                       self.sport_choice,
-                       event_name,
-                       self.duration_choice,
-                       self.zone_choice)
+        self.sql_manipulator.sql_insert(self.selected_date_string,
+                                        self.sport_choice,
+                                        event_name,
+                                        self.duration_choice,
+                                        self.zone_choice)
+
+        self.render_workout_data_widget(self.selected_date_string)
+
+    def retrieve_workout_data_for_display_widget(self, selected_date_string):
+        """
+        should implement a measure to prevent this method failing is bad data is
+        returned from the database
+        """
+
+        planned_sessions_for_selected_day = self.sql_manipulator.sql_retrieve(date=selected_date_string)
+        strava_data_for_same_date = return_matching_strava_data(self.strava_json_data, selected_date_string)
+        print(f"daily data for {selected_date_string}: ", planned_sessions_for_selected_day)
+        planned_workouts_for_day = []
+
+        if len(planned_sessions_for_selected_day) != 0:
+            for planned_session_details in planned_sessions_for_selected_day:
+                planned_workout = WorkoutBox(self, planned_session_details, strava_data_for_same_date)
+                planned_workout.setPalette(planned_workout.palette)
+                planned_workouts_for_day.append(planned_workout)
+
+        return planned_workouts_for_day
 
     def render_workout_data_widget(self, date_string):
         self.selected_date_string = date_string
@@ -108,8 +126,8 @@ class RightSide(QWidget):
         vbox = QVBoxLayout()
         workout_display_widget.setLayout(vbox)
 
-        returned_planned_workouts = self.retrieve_workout_data_for_display_widget(
-            self.selected_date_string)
+        returned_planned_workouts = \
+            self.retrieve_workout_data_for_display_widget(self.selected_date_string)
 
         if returned_planned_workouts is not None:
             for workout in returned_planned_workouts:
@@ -119,60 +137,7 @@ class RightSide(QWidget):
 
         self.scroll_area.setWidget(workout_display_widget)
 
-    def retrieve_workout_data_for_display_widget(self, selected_date_string):
-        """
-        should implement a measure to prevent this method failing is bad data is
-        returned from the database
-        """
-
-        planned_sessions_for_selected_day = sql.sql_retrieve(selected_date_string)
-        print(f"daily data for {selected_date_string}: ", planned_sessions_for_selected_day)
-        planned_workouts_for_day = []
-
-        if len(planned_sessions_for_selected_day) != 0:
-
-            for planned_session_details in planned_sessions_for_selected_day:
-                strava_data_for_same_date = data_management_functions.return_matching_strava_data(self.strava_json_data,
-                                                                                                  selected_date_string)
-                planned_workout = QTextEdit(planned_session_details[2])
-                planned_workout_length = int(planned_session_details[3])
-                planned_workout.setAutoFillBackground(True)
-                palette = self.palette()
-
-                if len(strava_data_for_same_date) > 0:
-                    matching_strava_workout_data = strava_data_for_same_date[0]
-                    matching_strava_workout_duration = matching_strava_workout_data[2]
-                    planned_workout_short = matching_strava_workout_duration < planned_workout_length * 0.75
-
-                    print("Planned session", planned_session_details)
-                    print("Actual strava session", matching_strava_workout_data)
-
-                    if planned_session_details[1] == matching_strava_workout_data[1]:
-
-                        if planned_workout_short:
-                            palette.setColor(QPalette.Window, QColor("Orange"))
-                            palette.setColor(QPalette.Background, QColor("Orange"))
-
-                        else:
-                            palette.setColor(QPalette.Window, QColor("Green"))
-                            palette.setColor(QPalette.Background, QColor("Green"))
-
-                    else:
-                        print("No matching workout data found.")
-                        palette.setColor(QPalette.Window, QColor("Red"))
-                        palette.setColor(QPalette.Background, QColor("Red"))
-
-                else:
-                    print("No matching workout data found.")
-                    palette.setColor(QPalette.Window, QColor("Red"))
-                    palette.setColor(QPalette.Background, QColor("Red"))
-
-                planned_workout.setPalette(palette)
-                planned_workouts_for_day.append(planned_workout)
-
-            return planned_workouts_for_day
-
     def data_refresh(self):
         print("Refreshing strava data...")
-        data_management_functions.fetch_strava_data()
+        fetch_strava_data()
         print("Done")
