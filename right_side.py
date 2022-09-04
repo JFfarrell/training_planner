@@ -129,7 +129,7 @@ class RightSide(QWidget):
         returned_planned_workouts = \
             self.retrieve_workout_data_for_display_widget(self.selected_date_string)
 
-        if returned_planned_workouts is not None:
+        if len(returned_planned_workouts) > 0:
             for workout in returned_planned_workouts:
                 vbox.addWidget(workout)
         else:

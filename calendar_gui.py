@@ -36,7 +36,6 @@ class MainWindow(QMainWindow):
 
     def trigger_widget_on_calendar_click(self):
         self.set_current_date_variables()
-        print("pre-args: ", self.date)
         self.right_side_object.render_workout_data_widget(self.selected_date_string)
 
 

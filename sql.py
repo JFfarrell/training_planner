@@ -44,7 +44,6 @@ class SqlManipulator:
             print(activity_type, name, date, duration, intensity)
 
     def sql_remove_workout(self, workout_details):
-        print("test: ", workout_details)
 
         conn = mariadb.connect(host=self.db_host,
                                user=self.db_username,

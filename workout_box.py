@@ -18,7 +18,7 @@ class WorkoutBox(QWidget):
         self.delete_button.setIcon(QIcon("images/trash.png"))
         self.delete_button.clicked.connect(self.delete_button_clicked)
 
-        self.planned_workout = QLabel(planned_session_details[2])
+        self.planned_workout = QLabel()
         self.planned_workout_length = int(planned_session_details[3])
         self.planned_session_details = planned_session_details
         self.planned_workout.setAutoFillBackground(True)
@@ -32,12 +32,14 @@ class WorkoutBox(QWidget):
         self.workout_layout.addLayout(self.left_layout)
         self.workout_layout.addWidget(self.delete_button)
         self.setLayout(self.workout_layout)
-        self.setStyleSheet("border :2px solid ;"
-                           "border-color : red; "
-                           )
+        # self.setStyleSheet("border :2px solid ;"
+        #                    "border-color : red; "
+        #                    )
+        self.set_palette_colour()
 
     def set_palette_colour(self):
         if len(self.strava_data) > 0:
+            self.planned_workout.setText(self.planned_session_details[2])
             matching_strava_workout_data = self.strava_data[0]
             matching_strava_workout_duration = matching_strava_workout_data[2]
             planned_workout_short = matching_strava_workout_duration < self.planned_workout_length * 0.75
@@ -63,6 +65,7 @@ class WorkoutBox(QWidget):
 
         else:
             print("No matching workout data found.")
+            self.planned_workout.setText("Nothing here yet.")
             self.palette.setColor(QPalette.Window, QColor("Red"))
             self.palette.setColor(QPalette.Background, QColor("Red"))
 
