@@ -32,20 +32,15 @@ class WorkoutBox(QWidget):
         self.workout_layout.addLayout(self.left_layout)
         self.workout_layout.addWidget(self.delete_button)
         self.setLayout(self.workout_layout)
-        # self.setStyleSheet("border :2px solid ;"
-        #                    "border-color : red; "
-        #                    )
         self.set_palette_colour()
 
     def set_palette_colour(self):
+        self.planned_workout.setText(self.planned_session_details[2])
+
         if len(self.strava_data) > 0:
-            self.planned_workout.setText(self.planned_session_details[2])
             matching_strava_workout_data = self.strava_data[0]
             matching_strava_workout_duration = matching_strava_workout_data[2]
             planned_workout_short = matching_strava_workout_duration < self.planned_workout_length * 0.75
-
-            print("Planned session", self.planned_session_details)
-            print("Actual strava session", matching_strava_workout_data)
 
             if self.planned_session_details[1] == matching_strava_workout_data[1]:
                 print("Matching workout found")
@@ -63,11 +58,10 @@ class WorkoutBox(QWidget):
                 self.palette.setColor(QPalette.Window, QColor("Red"))
                 self.palette.setColor(QPalette.Background, QColor("Red"))
 
-        else:
-            print("No matching workout data found.")
-            self.planned_workout.setText("Nothing here yet.")
-            self.palette.setColor(QPalette.Window, QColor("Red"))
-            self.palette.setColor(QPalette.Background, QColor("Red"))
+        # else:
+        #     print("No matching workout data found.")
+            # self.palette.setColor(QPalette.Window, QColor("Red"))
+            # self.palette.setColor(QPalette.Background, QColor("Red"))
 
     def delete_button_clicked(self):
         print("planned session details: ", self.planned_session_details)
